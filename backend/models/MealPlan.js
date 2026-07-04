@@ -59,6 +59,52 @@ class MealPlan {
      * Get upcoming meals (next 7 days)
      */
     static async getUpcoming(userId, limit = 5) {
-        
+        const result = await db.query(
+            `SELECT mp.*, r.name as recipe_name, r.image_url
+            FROM meal_plans mp
+            JOIN recipes r On mp.recipe_id = r.id
+            WHERE mp.user_id = $1
+            AND mp.meal_date >= CURRENT_DATE
+            ODER BY meal_date ASC,
+            CASE mp.meal_type
+            WHEN 'breakfast' THEN 1
+            WHEN 'lunch' THEN 2
+            WHEN 'dinner' THEN 3
+            END
+            LIMIT $2`,
+            [userId, limit]
+        );
+
+        return result.row;
+    }
+
+    /**
+     * Delete meal plan entry
+     */
+    static async delete(id, userId) {
+        const result = await db.query(
+            `DELETE FROM meal_plans WHERE id = $1 AND user_id = $2 RETURNING *`,
+            [id, userId]
+        );
+
+        return result.rows[0];
+    }
+
+    /**
+     * Get meal plan stats
+     */
+    static async getStats(userId) {
+        const result = await db.query(
+            `SELECT
+            COUNT(*) as total_planned_meals,
+            COUNT(*) FILTER (WHERE meal_date >= CURRENT_DATE AND meal_date < CURRENT_DATE + INTERVAL '7 days') as this_week_count
+            FROM meal_plans
+            WHERE user_id = $1`,
+            [userId]
+        );
+
+        return result.rows[0];
     }
 }
+
+export default MealPlan;

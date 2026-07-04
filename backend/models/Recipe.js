@@ -18,10 +18,10 @@ class Recipe {
                 prep_time,
                 cook_time,
                 servings,
-                imstructions,
+                instructions,
                 dietary_tags = [],
                 user_notes,
-                images_url, 
+                image_url, 
                 ingredients = [], 
                 nutrition = {}
             } = recipeData;
@@ -31,7 +31,7 @@ class Recipe {
                 `INSERT INTO recipes
                 (user_id, name, description, cuisine_type, difficulty, prep_time, cook_time, servings, instructions, dietary_tags, user_notes, image_url)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                RETURNING *`, [user_id, name, description, cuisine_type, difficulty, prep_time, cook_time, servings, JSON.stringify(instructions), dietary_tags, user_notes, image_url]
+                RETURNING *`, [userId, name, description, cuisine_type, difficulty, prep_time, cook_time, servings, JSON.stringify(instructions), dietary_tags, user_notes, image_url]
             );
 
             const recipe = recipeResult.rows[0];
@@ -48,7 +48,7 @@ class Recipe {
                 });
 
                 await client.query(
-                    `INSERT INTO recipe_ingredients (recipe_id, ingredients_name, quantity, unit) VALUES ${ingredientValues}`,
+                    `INSERT INTO recipe_ingredients (recipe_id, ingredient_name, quantity, unit) VALUES ${ingredientValues}`,
                     ingredientParams
                 );
             }
@@ -58,7 +58,7 @@ class Recipe {
                 await client.query(
                     `INSERT INTO recipe_nutrition (recipe_id, calories, protein, carbs, fats, fiber)
                     VALUES ($1, $2, $3, $4, $5, $6)`,
-                        [recipe_id, nutrition.calories, nutrition.protein, nutrition.carbs, nutritiom.fats, nutrition.fiber]
+                        [recipe.id, nutrition.calories, nutrition.protein, nutrition.carbs, nutrition.fats, nutrition.fiber]
                 );
             }
 
@@ -104,7 +104,7 @@ class Recipe {
         return {
             ...recipe,
             ingredients: ingredientsResult.rows,
-            nutritiom: nutritionResult.rows[0] || null
+            nutrition: nutritionResult.rows[0] || null
         };
     }
 
@@ -215,7 +215,7 @@ class Recipe {
                 user_notes = COALESCE($10, user_notes),
                 image_url = COALESCE($11, image_url)
             WHERE id = $12 AND user_id = $13
-            RETURNING *`
+            RETURNING *`,
                 [name, description, cuisine_type, difficulty, prep_time, cook_time, servings,
                     instructions ? JSON.stringify(instructions) : null, dietary_tags, user_notes, image_url, id, userId]
         );
